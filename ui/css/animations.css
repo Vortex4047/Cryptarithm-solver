@@ -1,0 +1,142 @@
+/* ==========================================================================
+   Scroll & Micro-Animations — Taste Skill Motion Architecture
+   ========================================================================== */
+
+/* Fade & Rise Entrance */
+.animate-in {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 350ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.animate-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered Delay Helpers */
+.stagger-1 { transition-delay: 40ms; }
+.stagger-2 { transition-delay: 90ms; }
+.stagger-3 { transition-delay: 140ms; }
+.stagger-4 { transition-delay: 190ms; }
+.stagger-5 { transition-delay: 240ms; }
+
+/* Subtle Pulse for Timer Warning */
+@keyframes timerPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.timer-pulsing {
+  animation: timerPulse 1s ease-in-out infinite;
+}
+
+/* Shimmer / Skeleton for Loading States */
+@keyframes shimmer {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
+.loading-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Number roll-up transition */
+.counter-animate {
+  transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), opacity 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Letter Card Pop Effect */
+@keyframes cardPop {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pop-in {
+  animation: cardPop 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shake Effect on Invalid Submission */
+@keyframes shakeInvalid {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.shake {
+  animation: shakeInvalid 350ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+/* Active Column Glow in Replay */
+@keyframes columnPulse {
+  0% { background-color: transparent; }
+  50% { background-color: var(--accent-dim); }
+  100% { background-color: transparent; }
+}
+
+.col-highlight {
+  animation: columnPulse 1.2s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Carry Transfer Animation */
+@keyframes carryFly {
+  0% { transform: translateY(12px); opacity: 0; }
+  60% { transform: translateY(-2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.carry-bubble {
+  animation: carryFly 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Digit Flip Transition */
+@keyframes digitFlip {
+  0% { transform: scale(0.8); opacity: 0.2; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.digit-updated {
+  animation: digitFlip 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hint Pulse for Card */
+@keyframes hintFlash {
+  0% { transform: scale(1); border-color: var(--warning); }
+  50% { transform: scale(1.08); border-color: var(--warning); background-color: var(--warning-dim); }
+  100% { transform: scale(1); border-color: var(--border); }
+}
+
+.hint-active {
+  animation: hintFlash 1.4s ease-in-out 2;
+}
+
+/* Celebration Wave */
+@keyframes celebrateScale {
+  0% { transform: scale(0.96); opacity: 0.8; }
+  50% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.celebration-banner {
+  animation: celebrateScale 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-in {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

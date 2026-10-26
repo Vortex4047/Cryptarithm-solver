@@ -1,22 +1,42 @@
-import json
+"""Unit tests for progress tracking and analytics."""
 
-from cryptarithm import progress
+import unittest
+
+from core.progress import (
+    clear_progress,
+    get_analytics,
+    load_progress,
+    record_attempt,
+    suggested_difficulty,
+)
 
 
-def test_record_challenge_attempt_saves_category_and_reason(tmp_path, monkeypatch):
-    data_file = tmp_path / "progress.json"
-    monkeypatch.setattr(progress, "DATA_FILE", data_file)
+class TestProgress(unittest.TestCase):
+    def setUp(self):
+        clear_progress()
 
-    progress.record_attempt(
-        "SEND + MORE = MONEY",
-        False,
-        letter_count=8,
-        difficulty="Easy",
-        challenge=True,
-        reason="Time expired.",
-    )
+    def test_record_and_load(self):
+        record_attempt("TO + GO = OUT", True, letter_count=5, difficulty="Easy")
+        history = load_progress()
+        self.assertEqual(len(history), 1)
+        self.assertTrue(history[0]["solved"])
 
-    attempt = json.loads(data_file.read_text(encoding="utf-8"))[0]
-    assert attempt["solved"] is False
-    assert attempt["source"] == "challenge"
-    assert attempt["reason"] == "Time expired."
+    def test_suggested_difficulty_easy_default(self):
+        self.assertEqual(suggested_difficulty(), "Easy")
+
+    def test_suggested_difficulty_progression(self):
+        for _ in range(5):
+            record_attempt("TO + GO = OUT", True, letter_count=5, difficulty="Easy")
+        self.assertEqual(suggested_difficulty(), "Hard")
+
+    def test_analytics_metrics(self):
+        record_attempt("TO + GO = OUT", True, letter_count=5, difficulty="Easy")
+        record_attempt("HE + ME = WE", False, letter_count=4, difficulty="Easy")
+        analytics = get_analytics()
+        self.assertEqual(analytics["total_attempts"], 2)
+        self.assertEqual(analytics["solved_count"], 1)
+        self.assertEqual(analytics["accuracy_pct"], 50.0)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cryptarithm Lab: Constraint Satisfaction Solver & Learning Suite</title>
+  <meta name="description" content="Solve addition cryptarithms, compare CSP search algorithms with empirical benchmarks, and master letter-card puzzle challenges.">
+  
+  <!-- Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Taste Skill Stylesheets -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+  <div id="app-shell">
+    
+    <!-- Navigation Rail -->
+    <nav id="nav-rail" aria-label="Main navigation">
+      <div class="brand-mark" title="Cryptarithm Lab">CL</div>
+
+      <div class="nav-group">
+        <button class="nav-item active" data-tab="studio" data-tooltip="Solve & Studio" aria-label="Solve and Studio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+            <path d="M7 12h10M12 7v10"></path>
+          </svg>
+        </button>
+
+        <button class="nav-item" data-tab="challenge" data-tooltip="Letter-Card Challenge" aria-label="Timed Challenge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </button>
+
+        <button class="nav-item" data-tab="library" data-tooltip="Classics Library" aria-label="Classics Library">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </button>
+
+        <button class="nav-item" data-tab="benchmark" data-tooltip="Research Lab" aria-label="Research Benchmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+        </button>
+
+        <button class="nav-item" data-tab="dashboard" data-tooltip="Learning Dashboard" aria-label="Learning Analytics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <div class="nav-bottom">
+        <button class="nav-item" data-tab="docs" data-tooltip="Mathematical Rules" aria-label="Rules and Documentation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Scrollable Canvas -->
+    <main id="main-view">
+      
+      <!-- Sticky Top Header -->
+      <header class="view-header">
+        <div class="header-left">
+          <h1>Cryptarithm Lab</h1>
+          <p class="subtitle">Constraint satisfaction solver, empirical search benchmark, and adaptive practice suite.</p>
+        </div>
+        <div class="header-actions">
+          <span class="pill pill-neutral" id="engine-status">PySide6 Engine Ready</span>
+        </div>
+      </header>
+
+      <div class="content-container">
+
+        <!-- ==========================================
+             TAB 1: SOLVE & STUDIO
+             ========================================== -->
+        <section id="tab-studio" class="tab-pane active" aria-labelledby="studio-heading">
+          <h2 id="studio-heading" style="display: none;">Studio & Visualizer</h2>
+
+          <!-- Puzzle Input Control Card -->
+          <div class="card animate-in visible">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Cryptarithm Equation</h3>
+                <p class="card-description">Addition format with letters A–Z (e.g., SEND + MORE = MONEY).</p>
+              </div>
+              <div class="btn-group">
+                <button class="btn btn-secondary btn-sm" id="btn-gen-easy">Easy</button>
+                <button class="btn btn-secondary btn-sm" id="btn-gen-med">Medium</button>
+                <button class="btn btn-secondary btn-sm" id="btn-gen-hard">Hard</button>
+              </div>
+            </div>
+
+            <div class="input-action-row" style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+              <input type="text"
+                     id="puzzle-input"
+                     class="input-text mono"
+                     style="flex: 1;"
+                     value="SEND + MORE = MONEY"
+                     placeholder="SEND + MORE = MONEY"
+                     aria-label="Cryptarithm Equation Input" />
+              <button class="btn btn-primary" id="btn-solve">Solve Puzzle</button>
+            </div>
+          </div>
+
+          <!-- Vertical Column Arithmetic Visualizer (The Live Component) -->
+          <div class="card animate-in visible stagger-1">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Vertical Column-Addition Architecture</h3>
+                <p class="card-description">Interactive column alignment with carry propagation mechanics.</p>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="pill pill-accent">Interactive Visualizer</span>
+              </div>
+            </div>
+
+            <div id="visualizer-container" class="column-visualizer">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+
+            <!-- Replay Controller & Stepper -->
+            <div id="replay-controller-box" class="replay-controller">
+              <div class="replay-controls-row">
+                <div class="replay-btn-group">
+                  <button class="replay-btn" id="btn-replay-first" title="First Step">⏮ First</button>
+                  <button class="replay-btn" id="btn-replay-prev" title="Previous Step">◀ Prev</button>
+                  <button class="replay-btn" id="btn-replay-play" title="Play Animation">▶ Play</button>
+                  <button class="replay-btn" id="btn-replay-next" title="Next Step">Next ▶</button>
+                  <button class="replay-btn" id="btn-replay-last" title="Last Step">Last ⏭</button>
+                </div>
+                <div class="replay-step-info" id="replay-step-text">Step 0 of 0</div>
+                <div class="btn-group">
+                  <button class="replay-btn" id="btn-speed-slow">0.5x</button>
+                  <button class="replay-btn active" id="btn-speed-normal">1x</button>
+                  <button class="replay-btn" id="btn-speed-fast">2x</button>
+                </div>
+              </div>
+
+              <!-- Replay Progress Scrubber -->
+              <div class="replay-progress-track" id="replay-progress-bar">
+                <div class="replay-progress-fill" id="replay-progress-fill"></div>
+              </div>
+
+              <!-- Replay Step Explanation -->
+              <div class="replay-step-description" id="replay-description-text">
+                Press Play or click Next to animate the step-by-step constraint propagation.
+              </div>
+            </div>
+          </div>
+
+          <!-- Solver Solution & Step-by-Step Proof Output -->
+          <div id="solver-output" class="animate-in visible stagger-2">
+            <!-- Rendered upon solving -->
+          </div>
+
+          <!-- Deductive Mathematical Proof Cards -->
+          <div id="proof-section" class="card animate-in visible stagger-3" style="display: none;">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Deductive Mathematical Proof & Carry Chain</h3>
+                <p class="card-description">Formal logical derivations proving why each variable must hold its assigned value.</p>
+              </div>
+              <span class="pill pill-neutral">Formal Proof</span>
+            </div>
+            <div id="proof-container" class="proof-container">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Self-Practice Logging Strip -->
+          <div class="card card-raised animate-in visible stagger-4">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h3 style="color: var(--text); font-size: 15px;">Practice Record</h3>
+                <p style="margin-top: 4px; font-size: 13px;">Attempted this puzzle manually? Log your outcome to update learning metrics.</p>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <button class="btn btn-success btn-sm" id="btn-record-solved">I Solved It</button>
+                <button class="btn btn-secondary btn-sm" id="btn-record-needswork">Needs More Practice</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 2: LETTER-CARD CHALLENGE
+             ========================================== -->
+        <section id="tab-challenge" class="tab-pane" aria-labelledby="challenge-heading">
+          <div class="card-header" style="border: none; padding: 0;">
+            <div>
+              <h2>Timed Letter-Card Challenge</h2>
+              <p class="subtitle">Assign a distinct decimal digit (0–9) to each letter before the timer expires.</p>
+            </div>
+          </div>
+
+          <!-- Challenge Setup Strip & Timer HUD -->
+          <div class="grid-2 animate-in visible">
+            <!-- Setup Card -->
+            <div class="card">
+              <h3 class="card-title">Challenge Setup</h3>
+              <div class="input-group">
+                <label for="challenge-equation" class="input-label">Equation</label>
+                <input type="text" id="challenge-equation" class="input-text mono" value="SEND + MORE = MONEY" />
+              </div>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="input-group" style="flex: 1;">
+                  <label for="challenge-difficulty" class="input-label">Difficulty Level</label>
+                  <select id="challenge-difficulty" class="select-control">
+                    <option value="Easy">Easy (5 minutes)</option>
+                    <option value="Medium" selected>Medium (10 minutes)</option>
+                    <option value="Hard">Hard (30 minutes)</option>
+                  </select>
+                </div>
+                <button class="btn btn-secondary" id="btn-gen-challenge" style="margin-top: 22px;">Generate</button>
+              </div>
+              <div style="display: flex; gap: 10px; margin-top: 8px;">
+                <button class="btn btn-primary" id="btn-start-challenge" style="flex: 1;">Start Challenge</button>
+                <button class="btn btn-secondary" id="btn-get-hint" style="flex: 1;" disabled>Get Hint</button>
+                <button class="btn btn-success" id="btn-submit-challenge" style="flex: 1;" disabled>Submit Answer</button>
+              </div>
+            </div>
+
+            <!-- Timer HUD -->
+            <div id="timer-hud" class="timer-hud">
+              <div class="timer-circle-container">
+                <svg class="timer-svg" viewBox="0 0 72 72">
+                  <circle class="timer-bg-circle" cx="36" cy="36" r="32"></circle>
+                  <circle id="timer-progress" class="timer-progress-circle" cx="36" cy="36" r="32"></circle>
+                </svg>
+              </div>
+              <div class="timer-text-group" style="flex: 1;">
+                <div id="timer-value" class="timer-value">10:00</div>
+                <div class="timer-label">Time Remaining</div>
+                <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                  <span class="pill pill-neutral" id="challenge-status-pill">Ready to start</span>
+                  <span class="pill pill-warning" id="challenge-hints-used" style="display: none;">0 Hints Used</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Letter Cards Input Pad -->
+          <div class="card animate-in visible stagger-1">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Letter Cards Pad</h3>
+                <p class="card-description">Type a digit into each letter card. Use keyboard (0–9) or arrow keys to navigate.</p>
+              </div>
+            </div>
+            <div id="challenge-cards-container" class="letter-cards-grid">
+              <!-- Dynamically populated -->
+            </div>
+
+            <!-- Onscreen Quick Keypad -->
+            <div style="display: flex; flex-direction: column; align-items: center; margin-top: 14px;">
+              <div class="card-description" style="margin-bottom: 8px;">Quick Digit Touchpad</div>
+              <div class="touch-keypad">
+                <button class="keypad-btn" data-key="1">1</button>
+                <button class="keypad-btn" data-key="2">2</button>
+                <button class="keypad-btn" data-key="3">3</button>
+                <button class="keypad-btn" data-key="4">4</button>
+                <button class="keypad-btn" data-key="5">5</button>
+                <button class="keypad-btn" data-key="6">6</button>
+                <button class="keypad-btn" data-key="7">7</button>
+                <button class="keypad-btn" data-key="8">8</button>
+                <button class="keypad-btn" data-key="9">9</button>
+                <button class="keypad-btn" data-key="0">0</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Challenge Result Container -->
+          <div id="challenge-result-box" class="animate-in visible stagger-2"></div>
+        </section>
+
+        <!-- ==========================================
+             TAB 3: CLASSICS LIBRARY
+             ========================================== -->
+        <section id="tab-library" class="tab-pane" aria-labelledby="library-heading">
+          <div class="card-header" style="border: none; padding: 0;">
+            <div>
+              <h2>Classics Alphametic Library</h2>
+              <p class="subtitle">Curated collection of celebrated addition cryptarithms from puzzle history.</p>
+            </div>
+          </div>
+
+          <div id="catalogue-container" class="catalogue-grid animate-in visible">
+            <!-- Dynamically populated from getCatalogue() -->
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 4: RESEARCH BENCHMARK LAB
+             ========================================== -->
+        <section id="tab-benchmark" class="tab-pane" aria-labelledby="benchmark-heading">
+          <div class="card-header" style="border: none; padding: 0;">
+            <div>
+              <h2>Research Benchmark Laboratory</h2>
+              <p class="subtitle">Empirical performance comparison of Constraint Satisfaction Search strategies.</p>
+            </div>
+          </div>
+
+          <div class="card animate-in visible">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <input type="text" id="benchmark-equation" class="input-text mono" style="flex: 1;" value="SEND + MORE = MONEY" placeholder="SEND + MORE = MONEY" />
+              <button class="btn btn-primary" id="btn-run-benchmark">Run Empirical Benchmark</button>
+            </div>
+          </div>
+
+          <!-- Comparative Performance Bars Chart -->
+          <div class="card animate-in visible stagger-1">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Search Strategy Exploration (Node Expansions)</h3>
+                <p class="card-description">Fewer nodes represent superior heuristic pruning efficiency.</p>
+              </div>
+            </div>
+            <div id="benchmark-chart" style="width: 100%; min-height: 180px;">
+              <!-- Pure SVG rendered by charts.js -->
+            </div>
+          </div>
+
+          <!-- Strategy Breakdown Cards -->
+          <div id="benchmark-cards" class="grid-3 animate-in visible stagger-2">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- Insight Analysis Box -->
+          <div id="benchmark-insight" class="animate-in visible stagger-3"></div>
+        </section>
+
+        <!-- ==========================================
+             TAB 5: LEARNING & ANALYTICS DASHBOARD
+             ========================================== -->
+        <section id="tab-dashboard" class="tab-pane" aria-labelledby="dashboard-heading">
+          <div class="card-header" style="border: none; padding: 0;">
+            <div>
+              <h2>Learning Analytics Dashboard</h2>
+              <p class="subtitle">Session performance metrics, accuracy trajectories, and historical problem logs.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-clear-history">Reset History</button>
+          </div>
+
+          <!-- KPI Strip -->
+          <div class="grid-kpi animate-in visible">
+            <div class="kpi-tile">
+              <span class="kpi-label">Total Attempts</span>
+              <span class="kpi-value" id="kpi-attempts">0</span>
+              <span class="kpi-sub">Across all sessions</span>
+            </div>
+            <div class="kpi-tile">
+              <span class="kpi-label">Puzzles Solved</span>
+              <span class="kpi-value" id="kpi-solved" style="color: var(--positive);">0</span>
+              <span class="kpi-sub">Verified completions</span>
+            </div>
+            <div class="kpi-tile">
+              <span class="kpi-label">Overall Accuracy</span>
+              <span class="kpi-value" id="kpi-accuracy">0%</span>
+              <span class="kpi-sub">Success ratio</span>
+            </div>
+            <div class="kpi-tile">
+              <span class="kpi-label">Active Streak</span>
+              <span class="kpi-value" id="kpi-streak">0</span>
+              <span class="kpi-sub">Consecutive solutions</span>
+            </div>
+            <div class="kpi-tile">
+              <span class="kpi-label">Recommended Level</span>
+              <span class="kpi-value" id="kpi-level" style="color: var(--accent);">Easy</span>
+              <span class="kpi-sub">Adaptive progression</span>
+            </div>
+          </div>
+
+          <!-- Rolling Accuracy Chart -->
+          <div class="card animate-in visible stagger-1">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Rolling Accuracy Curve (5-Attempt Window)</h3>
+                <p class="card-description">Progression over sequential practice and challenge attempts.</p>
+              </div>
+            </div>
+            <div id="dashboard-timeline-chart" style="width: 100%; min-height: 180px;">
+              <!-- Pure SVG rendered by charts.js -->
+            </div>
+          </div>
+
+          <!-- Historical Attempts Table -->
+          <div class="card animate-in visible stagger-2">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Attempt History Log</h3>
+                <p class="card-description">Recent timed challenges and practice records.</p>
+              </div>
+            </div>
+            <div class="data-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Equation</th>
+                    <th>Difficulty</th>
+                    <th>Outcome</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB 6: DOCUMENTATION & RULES
+             ========================================== -->
+        <section id="tab-docs" class="tab-pane" aria-labelledby="docs-heading">
+          <div class="card-header" style="border: none; padding: 0;">
+            <div>
+              <h2>Cryptarithm Mathematical Rules</h2>
+              <p class="subtitle">Mathematical constraints, domain rules, and CSP search principles.</p>
+            </div>
+          </div>
+
+          <div class="grid-2 animate-in visible">
+            <div class="card">
+              <h3 class="card-title">Foundational Rules</h3>
+              <p>1. <strong>Bijection</strong>: Each letter uniquely represents a single decimal digit from 0 to 9. Two different letters cannot share the same digit.</p>
+              <p style="margin-top: 8px;">2. <strong>Non-Zero Leading Letters</strong>: The first letter of any multi-letter word cannot be zero (e.g. In SEND, S ≠ 0).</p>
+              <p style="margin-top: 8px;">3. <strong>Base-10 Alphabet Limit</strong>: Because base-10 arithmetic uses digits 0–9, an equation can contain at most 10 distinct letters.</p>
+              <p style="margin-top: 8px;">4. <strong>Interlocking Characters</strong>: Addends must share letters with each other or the result to form a constraint network.</p>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">CSP Search Algorithms</h3>
+              <p>• <strong>Basic Backtracking</strong>: Explores variable assignments in arbitrary textual order, only validating arithmetic when all variables are filled.</p>
+              <p style="margin-top: 8px;">• <strong>MRV (Minimum Remaining Values)</strong>: Prioritizes variables with the tightest constraints (units column and leading letters), dramatically cutting search space.</p>
+              <p style="margin-top: 8px;">• <strong>Forward Checking (FC)</strong>: Prunes the domains of remaining variables each time an assignment is made and immediately detects column carry contradictions.</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" aria-live="polite"></div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/qwebchannel.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

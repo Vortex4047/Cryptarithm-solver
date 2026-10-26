@@ -7,3 +7,12 @@ __pycache__/
 
 # Local practice history
 data/progress.json
+
+# Agents & AI skills
+.agents/
+.claude/
+skills-lock.json
+
+# Taste skill artifacts & inspector runs
+.taste-skill/
+.taste*/

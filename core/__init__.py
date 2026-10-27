@@ -19,6 +19,7 @@ from core.puzzle import (
     words_share_letters,
 )
 from core.solver import SolveResult, solve
+from core.tutor import TutorSession, TutorStep, evaluate_tutor_answer, generate_tutor_session
 
 __all__ = [
     "Puzzle",
@@ -37,4 +38,8 @@ __all__ = [
     "clear_progress",
     "suggested_difficulty",
     "get_analytics",
+    "TutorSession",
+    "TutorStep",
+    "generate_tutor_session",
+    "evaluate_tutor_answer",
 ]

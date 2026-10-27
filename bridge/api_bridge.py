@@ -10,6 +10,7 @@ from core.generator import generate_puzzle, get_catalogue
 from core.progress import clear_progress, get_analytics, load_progress, record_attempt
 from core.puzzle import check_solution, evaluate_columns, parse_puzzle, word_value
 from core.solver import get_hint, solution_steps, solve
+from core.tutor import evaluate_tutor_answer, generate_tutor_session
 
 
 class CryptarithmBridge(QObject):
@@ -202,6 +203,37 @@ class CryptarithmBridge(QObject):
         try:
             clear_progress()
             response = {"success": True}
+        except Exception as err:
+            response = {"success": False, "error": str(err)}
+
+        return json.dumps(response)
+
+    @Slot(str, result=str)
+    def getTutorSession(self, equation: str) -> str:
+        """Initialize interactive 'Solve With Me' deduction tutor session."""
+        try:
+            session = generate_tutor_session(equation)
+            response = {
+                "success": True,
+                "equation": session.equation,
+                "letters": session.letters,
+                "total_steps": session.total_steps,
+                "steps": session.steps,
+                "full_solution": session.full_solution,
+                "preset_title": session.preset_title,
+            }
+        except Exception as err:
+            response = {"success": False, "error": str(err)}
+
+        return json.dumps(response)
+
+    @Slot(str, int, int, result=str)
+    def evaluateTutorAnswer(self, equation: str, step_index: int, selected_digit: int) -> str:
+        """Verify student choice for a tutor step."""
+        try:
+            session = generate_tutor_session(equation)
+            res = evaluate_tutor_answer(session.steps, step_index, selected_digit)
+            response = res
         except Exception as err:
             response = {"success": False, "error": str(err)}
 

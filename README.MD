@@ -2,7 +2,7 @@
 
 A high-performance desktop application for solving, benchmarking, and practicing addition cryptarithms (alphametics) such as `SEND + MORE = MONEY`.
 
-Rebuilt completely from scratch using **PySide6** and a modern, high-craft design language distilled with **Taste Skill v2**, the application combines a fast Constraint Satisfaction Problem (CSP) Python solving engine with a modern dark devtools interface, vertical column-addition carry visualizer, timed letter-card challenges, empirical search strategy benchmarks, and persistent learning analytics.
+Rebuilt completely from scratch using **PySide6** , the application combines a fast Constraint Satisfaction Problem (CSP) Python solving engine with a modern dark devtools interface, vertical column-addition carry visualizer, timed letter-card challenges, empirical search strategy benchmarks, and persistent learning analytics.
 
 ---
 
@@ -15,7 +15,14 @@ Rebuilt completely from scratch using **PySide6** and a modern, high-craft desig
 - **Multi-Strategy CSP Solver**: Solves addition cryptarithms in milliseconds with column-directed Forward Checking.
 - **Manual Practice Logging**: Allows self-recording of practice attempts with automatic difficulty classification.
 
-### 2. Timed Letter-Card Challenge
+### 2. Interactive "Solve With Me" Deduction Tutor
+- **Guided Pedagogical Reasoning**: Step-by-step mathematical reasoning tutor that walks users through solving cryptarithms using formal CSP principles (carry bounds, modular arithmetic, domain pruning, and distinctness constraints).
+- **Curated Classics Masterclass**: Specialized deductive narratives for famous puzzles including Dudeney's `SEND + MORE = MONEY`, `BASE + BALL = GAMES`, and generic step generation for any equation.
+- **Live Board & Digits Bank**: Dynamic stacked arithmetic visualizer updates in real time with deduced values in emerald green, glowing active variables, and cross-off digits bank ($0-9$).
+- **Tactile Choice Cards & Instant Explanations**: Multiple choice candidate digits with in-depth feedback explaining why a choice is mathematically sound or causes carry contradictions.
+- **Progress Tracking & Scoring**: Tracks deduction accuracy, hints used, and mastery score with end-of-session celebration badges.
+
+### 3. Timed Letter-Card Challenge
 - **Three Calibrated Difficulties**:
   - **Easy**: 5-minute countdown limit.
   - **Medium**: 10-minute countdown limit.
@@ -25,10 +32,10 @@ Rebuilt completely from scratch using **PySide6** and a modern, high-craft desig
 - **Circular Timer HUD**: Animated SVG countdown ring with pulse warnings as time expires.
 - **Immediate Carry Breakdown**: Verifies submitted solutions with detailed column-by-column validity reports.
 
-### 3. Classics Alphametic Library
+### 4. Classics Alphametic Library
 - **Celebrated Historical Catalogue**: 1-click loading for classic puzzles including Dudeney's `SEND + MORE = MONEY` (1924), `DONALD + GERALD = ROBERT`, `BASE + BALL = GAMES`, `CROSS + ROADS = DANGER`, and `SATURN + URANUS = PLANETS`.
 
-### 4. Research Benchmark Laboratory
+### 5. Research Benchmark Laboratory
 - **Empirical Search Comparison**: Compares three algorithms head-to-head on the same puzzle:
   1. **Basic Backtracking**: Pure recursive search without heuristic variable ordering.
   2. **MRV (Minimum Remaining Values)**: Prioritizes heavily constrained letters (units column, leading digits, high frequency).
@@ -36,7 +43,7 @@ Rebuilt completely from scratch using **PySide6** and a modern, high-craft desig
 - **Pure SVG Charts**: Clean horizontal comparative bar charts rendering node expansions, backtracks, and execution time in milliseconds.
 - **Pruning Metrics**: Computes percentage reduction in search space relative to baseline backtracking.
 
-### 5. Learning Analytics Dashboard
+### 6. Learning Analytics Dashboard
 - **Session KPIs**: Real-time tracking of total attempts, verified completions, accuracy percentage, and active/best streaks.
 - **Rolling Accuracy Timeline**: 5-attempt rolling window line chart visualizing skill progression.
 - **Session History Log**: Comprehensive tabular history with timestamps, equations, difficulty levels, and outcomes.
@@ -53,6 +60,7 @@ AISC PROJECT/
 │   ├── __init__.py             # Public exports for the core package
 │   ├── puzzle.py               # AST parsing, validation, column arithmetic check
 │   ├── solver.py               # CSP engine (Backtracking, MRV, MRV + Forward Checking)
+│   ├── tutor.py                # Interactive 'Solve With Me' deduction tutor engine
 │   ├── generator.py            # Calibrated puzzle generator (Easy, Medium, Hard)
 │   ├── progress.py             # Analytics, session storage, adaptive difficulty
 │   └── benchmark.py            # Comparative search benchmark runner
@@ -75,6 +83,7 @@ AISC PROJECT/
 │   └── progress.json
 ├── tests/                      # Comprehensive unit test suite
 │   ├── test_core.py            # Core end-to-end integration tests
+│   ├── test_tutor.py           # Deduction tutor session and evaluation tests
 │   ├── test_generator.py       # Puzzle generation and validity tests
 │   ├── test_progress.py        # Analytics and streak computation tests
 │   └── test_solver.py          # CSP solver and constraint validation tests

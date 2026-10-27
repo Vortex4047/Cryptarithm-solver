@@ -112,5 +112,17 @@ class TestBenchmark(unittest.TestCase):
         self.assertIn("insight", res)
 
 
+class TestTutorIntegration(unittest.TestCase):
+    def test_tutor_session_and_step_eval(self):
+        from core.tutor import evaluate_tutor_answer, generate_tutor_session
+        session = generate_tutor_session("SEND + MORE = MONEY")
+        self.assertEqual(session.total_steps, 8)
+        self.assertEqual(session.steps[0]["target_letter"], "M")
+        self.assertEqual(session.steps[0]["target_digit"], 1)
+
+        result = evaluate_tutor_answer(session.steps, 0, 1)
+        self.assertTrue(result["is_correct"])
+
+
 if __name__ == "__main__":
     unittest.main()

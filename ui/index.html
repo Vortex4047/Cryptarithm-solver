@@ -32,6 +32,14 @@
           </svg>
         </button>
 
+        <button class="nav-item" data-tab="tutor" data-tooltip="Deduction Tutor" aria-label="Solve With Me Tutor">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+          </svg>
+        </button>
+
         <button class="nav-item" data-tab="challenge" data-tooltip="Letter-Card Challenge" aria-label="Timed Challenge">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
             <circle cx="12" cy="12" r="10"></circle>
@@ -198,6 +206,153 @@
                 <button class="btn btn-success btn-sm" id="btn-record-solved">I Solved It</button>
                 <button class="btn btn-secondary btn-sm" id="btn-record-needswork">Needs More Practice</button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==========================================
+             TAB: SOLVE WITH ME (DEDUCTION TUTOR)
+             ========================================== -->
+        <section id="tab-tutor" class="tab-pane" aria-labelledby="tutor-heading">
+          <div class="card-header tutor-header-card" style="border: none; padding: 0;">
+            <div>
+              <div class="badge-row" style="margin-bottom: 8px;">
+                <span class="pill pill-primary">Guided CSP Reasoning</span>
+                <span class="pill pill-neutral" id="tutor-stage-pill">Step 1 of 8</span>
+              </div>
+              <h2 id="tutor-heading">Solve With Me: Deduction Tutor</h2>
+              <p class="subtitle">Interactive mathematical reasoning engine with column-by-column carry proofs, domain elimination, and instant feedback.</p>
+            </div>
+
+            <div class="tutor-header-controls">
+              <div class="select-wrapper">
+                <select id="tutor-preset-select" class="input-select" aria-label="Select Tutorial Puzzle">
+                  <option value="SEND + MORE = MONEY" selected>SEND + MORE = MONEY (Masterclass)</option>
+                  <option value="TO + GO = OUT">TO + GO = OUT (Introductory)</option>
+                  <option value="HE + ME = WE">HE + ME = WE (Minimalist)</option>
+                  <option value="BASE + BALL = GAMES">BASE + BALL = GAMES (Double Letter)</option>
+                  <option value="CROSS + ROADS = DANGER">CROSS + ROADS = DANGER (Cascade)</option>
+                </select>
+              </div>
+              <button id="btn-tutor-restart" class="btn btn-secondary btn-sm" title="Restart tutorial from beginning">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor">
+                  <path d="M1 4v6h6M23 20v-6h-6"></path>
+                  <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                </svg>
+                Restart
+              </button>
+            </div>
+          </div>
+
+          <!-- Tutor KPI / Progress strip -->
+          <div class="tutor-progress-strip">
+            <div class="progress-bar-container">
+              <div class="progress-bar-track">
+                <div id="tutor-progress-fill" class="progress-bar-fill" style="width: 12%;"></div>
+              </div>
+            </div>
+            <div class="tutor-stats-chips">
+              <span class="stat-chip" id="tutor-score-chip">Score: <strong>100</strong></span>
+              <span class="stat-chip" id="tutor-accuracy-chip">Accuracy: <strong>100%</strong></span>
+              <span class="stat-chip" id="tutor-hints-chip">Hints Used: <strong>0</strong></span>
+            </div>
+          </div>
+
+          <!-- Tutor 2-Column Split Workspace -->
+          <div class="tutor-workspace-grid">
+            <!-- Left Panel: Column Board & Digits Bank -->
+            <div class="card tutor-board-card">
+              <div class="card-header">
+                <h3>Live Arithmetic Board</h3>
+                <span class="pill pill-neutral" id="tutor-active-col-pill">Column: 10⁴</span>
+              </div>
+              
+              <div class="tutor-board-content">
+                <div class="tutor-visualizer-container" id="tutor-visualizer">
+                  <!-- Stacked Column Addition rendered dynamically -->
+                </div>
+
+                <div class="tutor-digits-bank-section">
+                  <div class="digits-bank-title">Digits Bank (0 – 9)</div>
+                  <div class="tutor-digits-bank" id="tutor-digits-bank">
+                    <!-- Digits 0-9 indicators rendered dynamically -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Panel: Interactive Question & Guidance Dialogue -->
+            <div class="card tutor-dialogue-card">
+              <div class="card-header">
+                <div class="tutor-mentor-badge">
+                  <div class="mentor-avatar">λ</div>
+                  <div>
+                    <h3 id="tutor-stage-title">Leading Column Carry Theorem</h3>
+                    <span class="tutor-variable-target" id="tutor-target-var">Deducing: Variable <strong>'M'</strong></span>
+                  </div>
+                </div>
+                <span class="pill pill-accent" id="tutor-rule-tag">Carry Bound</span>
+              </div>
+
+              <!-- Equation Context Callout -->
+              <div class="tutor-equation-callout" id="tutor-eq-context">
+                <code>C₄ = M</code>
+              </div>
+
+              <!-- Prompt Question -->
+              <div class="tutor-prompt-text" id="tutor-prompt-text">
+                Prompt loading...
+              </div>
+
+              <!-- Interactive Choices Grid -->
+              <div class="tutor-choices-grid" id="tutor-choices-grid">
+                <!-- Option buttons rendered dynamically -->
+              </div>
+
+              <!-- Instant Feedback Banner -->
+              <div class="tutor-feedback-banner" id="tutor-feedback" style="display: none;">
+                <div class="feedback-icon" id="tutor-feedback-icon">✓</div>
+                <div class="feedback-content">
+                  <div class="feedback-title" id="tutor-feedback-title">Correct Deduction!</div>
+                  <div class="feedback-body" id="tutor-feedback-body">Explanation text...</div>
+                </div>
+              </div>
+
+              <!-- Hint Box -->
+              <div class="tutor-hint-box" id="tutor-hint-box" style="display: none;">
+                <div class="hint-header">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                  <span>Deduction Hint</span>
+                </div>
+                <div class="hint-body" id="tutor-hint-text"></div>
+              </div>
+
+              <!-- Dialogue Actions -->
+              <div class="tutor-dialogue-actions">
+                <button id="btn-tutor-hint" class="btn btn-ghost btn-sm" title="Get a deductive hint without revealing the digit">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path></svg>
+                  Need a Hint?
+                </button>
+                <button id="btn-tutor-next" class="btn btn-primary" disabled>
+                  Next Deduction
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+              </div>
+
+              <!-- Completion State (Hidden until finished) -->
+              <div class="tutor-completion-panel" id="tutor-completion-panel" style="display: none;">
+                <div class="completion-celebration">
+                  <div class="trophy-ring">🎉</div>
+                  <h3>Cryptarithm Mastered!</h3>
+                  <p id="tutor-completion-summary">You deduced all letters step-by-step using pure mathematical constraint propagation.</p>
+                  <div class="completion-metrics" id="tutor-completion-metrics"></div>
+                  <div class="completion-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+                    <button id="btn-tutor-again" class="btn btn-primary">Practice Another</button>
+                    <button id="btn-tutor-to-challenge" class="btn btn-secondary">Try Timed Challenge</button>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </section>

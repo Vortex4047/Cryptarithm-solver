@@ -31,6 +31,18 @@
       userMap: {},
       hintsUsed: 0,
     },
+    tutor: {
+      equation: "SEND + MORE = MONEY",
+      session: null,
+      stepIndex: 0,
+      score: 100,
+      correctCount: 0,
+      attemptsCount: 0,
+      hintsUsed: 0,
+      cumulativeMap: {},
+      carries: {},
+      stepAnswered: false,
+    },
     analytics: null,
     bridgeReady: false,
   };
@@ -211,6 +223,55 @@
 
     async clearHistory() {
       return JSON.stringify({ success: true });
+    },
+
+    async getTutorSession(eq) {
+      const isSendMore = eq.includes("SEND") && eq.includes("MORE");
+      return JSON.stringify({
+        success: true,
+        equation: isSendMore ? "SEND + MORE = MONEY" : eq,
+        letters: isSendMore ? ["S", "E", "N", "D", "M", "O", "R", "Y"] : ["T", "O", "G", "U"],
+        total_steps: 8,
+        preset_title: isSendMore ? "SEND + MORE = MONEY (Masterclass)" : `${eq} Guided Deduction`,
+        full_solution: isSendMore ? { S: 9, E: 5, N: 6, D: 7, M: 1, O: 0, R: 8, Y: 2 } : { T: 2, O: 1, G: 8, U: 9 },
+        steps: [
+          {
+            step_index: 0,
+            total_steps: 8,
+            stage_name: "Leading Column Carry Theorem",
+            target_letter: "M",
+            target_digit: 1,
+            column_index: 4,
+            column_name: "Ten-Thousands Column (10⁴)",
+            equation_context: "C₄ = M",
+            prompt_question: "Look at the 5th column letter 'M' in the sum MONEY. The addends SEND and MORE each have 4 digits. In base-10 addition, the maximum sum of two 4-digit numbers is 9,999 + 9,999 = 19,998. Since M is the leading digit of MONEY, what digit must 'M' be?",
+            choices: [
+              { digit: 1, text: "1", is_correct: true, explanation: "Spot on! Two 4-digit numbers sum to at most 19,998, so the carry C₄ can only be 1. Because 'M' is a leading letter, M ≠ 0, forcing M = 1." },
+              { digit: 0, text: "0", is_correct: false, explanation: "Incorrect: In cryptarithms, leading letters can never be 0." },
+              { digit: 2, text: "2", is_correct: false, explanation: "Incorrect: In 2-addend sums, column carry cannot exceed 1." },
+              { digit: 9, text: "9", is_correct: false, explanation: "Incorrect: A single column carry cannot be 9." }
+            ],
+            hint_text: "Consider 9999 + 9999 = 19998. The highest digit is always 1.",
+            mathematical_rule: "Sum Carry Bound Theorem (C_k ≤ N - 1)",
+            cumulative_assignments: { M: 1 },
+            revealed_carries: { "4": 1 }
+          }
+        ]
+      });
+    },
+
+    async evaluateTutorAnswer(eq, stepIdx, digit) {
+      const isCorrect = (digit === 1);
+      return JSON.stringify({
+        success: true,
+        is_correct: isCorrect,
+        target_letter: "M",
+        target_digit: 1,
+        selected_digit: digit,
+        explanation: isCorrect ? "Spot on! Two 4-digit numbers sum to at most 19,998, forcing M = 1." : "Incorrect value for M.",
+        mathematical_rule: "Sum Carry Bound",
+        cumulative_assignments: isCorrect ? { M: 1 } : {}
+      });
     }
   };
 
@@ -286,6 +347,8 @@
       }
     } else if (tabId === "library") {
       loadCatalogue();
+    } else if (tabId === "tutor") {
+      initTutorSession();
     }
 
     if (window.AppMotion) window.AppMotion.observeAll();
@@ -623,6 +686,397 @@
       state.replay.currentIndex = newIdx;
       updateReplayUI();
     }
+  }
+
+  // ---------------------------------------------------------
+  // Solve With Me: Interactive Deduction Tutor
+  // ---------------------------------------------------------
+  async function initTutorSession(equation = null, forceReload = false) {
+    if (equation) {
+      state.tutor.equation = equation;
+    } else {
+      const presetSelect = document.getElementById("tutor-preset-select");
+      if (presetSelect && presetSelect.value) {
+        state.tutor.equation = presetSelect.value;
+      }
+    }
+
+    if (!forceReload && state.tutor.session && state.tutor.session.equation === state.tutor.equation) {
+      renderTutorCurrentStep();
+      return;
+    }
+
+    try {
+      showToast("Loading Deduction Tutor...", "info");
+      const resJson = await bridge.getTutorSession(state.tutor.equation);
+      const res = JSON.parse(resJson);
+
+      if (!res.success) {
+        showToast(`Tutor Error: ${res.error}`, "error");
+        return;
+      }
+
+      state.tutor.session = res;
+      state.tutor.stepIndex = 0;
+      state.tutor.score = 100;
+      state.tutor.correctCount = 0;
+      state.tutor.attemptsCount = 0;
+      state.tutor.hintsUsed = 0;
+      state.tutor.cumulativeMap = {};
+      state.tutor.carries = {};
+      state.tutor.stepAnswered = false;
+
+      // Reset dialogue & completion panels
+      const completionPanel = document.getElementById("tutor-completion-panel");
+      if (completionPanel) completionPanel.style.display = "none";
+
+      const dialogueActions = document.querySelector(".tutor-dialogue-actions");
+      if (dialogueActions) dialogueActions.style.display = "flex";
+
+      renderTutorCurrentStep();
+    } catch (err) {
+      console.error("Failed to load tutor session:", err);
+      showToast("Failed to initialize Tutor", "error");
+    }
+  }
+
+  function renderTutorCurrentStep() {
+    const session = state.tutor.session;
+    if (!session || !session.steps || session.steps.length === 0) return;
+
+    if (state.tutor.stepIndex >= session.total_steps) {
+      renderTutorCompletion();
+      return;
+    }
+
+    const step = session.steps[state.tutor.stepIndex];
+    state.tutor.stepAnswered = false;
+
+    // Update Progress Bar & KPIs
+    const stagePill = document.getElementById("tutor-stage-pill");
+    if (stagePill) stagePill.textContent = `Step ${step.step_index + 1} of ${step.total_steps}`;
+
+    const progressFill = document.getElementById("tutor-progress-fill");
+    if (progressFill) {
+      const pct = Math.round((step.step_index / step.total_steps) * 100);
+      progressFill.style.width = `${pct}%`;
+    }
+
+    updateTutorChips();
+
+    // Right Dialogue Card
+    const stageTitle = document.getElementById("tutor-stage-title");
+    if (stageTitle) stageTitle.textContent = step.stage_name;
+
+    const targetVar = document.getElementById("tutor-target-var");
+    if (targetVar) targetVar.innerHTML = `Deducing Variable <strong>'${step.target_letter}'</strong>`;
+
+    const ruleTag = document.getElementById("tutor-rule-tag");
+    if (ruleTag) ruleTag.textContent = step.column_name || "Rule";
+
+    const eqContext = document.getElementById("tutor-eq-context");
+    if (eqContext) eqContext.innerHTML = `<code>${step.equation_context}</code>`;
+
+    const promptText = document.getElementById("tutor-prompt-text");
+    if (promptText) promptText.textContent = step.prompt_question;
+
+    // Reset feedback & hint boxes
+    const feedbackBanner = document.getElementById("tutor-feedback");
+    if (feedbackBanner) feedbackBanner.style.display = "none";
+
+    const hintBox = document.getElementById("tutor-hint-box");
+    if (hintBox) hintBox.style.display = "none";
+
+    const nextBtn = document.getElementById("btn-tutor-next");
+    if (nextBtn) nextBtn.disabled = true;
+
+    // Render Choices Grid
+    const choicesGrid = document.getElementById("tutor-choices-grid");
+    if (choicesGrid) {
+      choicesGrid.innerHTML = "";
+      step.choices.forEach((choice, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "tutor-choice-btn";
+        btn.setAttribute("data-digit", choice.digit);
+        btn.innerHTML = `
+          <span class="choice-key">${idx + 1}</span>
+          <span class="choice-digit-badge">${choice.text}</span>
+        `;
+        btn.addEventListener("click", () => handleTutorChoice(choice.digit, btn));
+        choicesGrid.appendChild(btn);
+      });
+    }
+
+    // Left Board: Live Arithmetic Table & Digits Bank
+    renderTutorBoard(step);
+    renderTutorDigitsBank();
+  }
+
+  function updateTutorChips() {
+    const scoreChip = document.getElementById("tutor-score-chip");
+    if (scoreChip) scoreChip.innerHTML = `Score: <strong>${state.tutor.score}</strong>`;
+
+    const accuracyChip = document.getElementById("tutor-accuracy-chip");
+    if (accuracyChip) {
+      const acc = state.tutor.attemptsCount > 0
+        ? Math.round((state.tutor.correctCount / state.tutor.attemptsCount) * 100)
+        : 100;
+      accuracyChip.innerHTML = `Accuracy: <strong>${acc}%</strong>`;
+    }
+
+    const hintsChip = document.getElementById("tutor-hints-chip");
+    if (hintsChip) hintsChip.innerHTML = `Hints Used: <strong>${state.tutor.hintsUsed}</strong>`;
+  }
+
+  function renderTutorBoard(step) {
+    const container = document.getElementById("tutor-visualizer");
+    if (!container) return;
+
+    const parts = state.tutor.equation.split("=");
+    if (parts.length !== 2) return;
+    const addends = parts[0].split("+").map(s => s.trim().toUpperCase());
+    const result = parts[1].trim().toUpperCase();
+
+    const width = Math.max(...addends.map(a => a.length), result.length);
+
+    let html = `<table class="tutor-arithmetic-table">`;
+
+    // Carry row
+    html += `<tr class="tutor-carry-row"><td></td>`;
+    for (let c = width - 1; c >= 0; c--) {
+      const carryVal = step.revealed_carries && step.revealed_carries[String(c + 1)] !== undefined
+        ? step.revealed_carries[String(c + 1)]
+        : "";
+      html += `<td>${carryVal ? `<span class="pill pill-primary" style="font-size:11px; padding:2px 6px;">C${c + 1}=${carryVal}</span>` : ""}</td>`;
+    }
+    html += `</tr>`;
+
+    // Addend rows
+    addends.forEach((addend, rowIdx) => {
+      const pad = width - addend.length;
+      html += `<tr>`;
+      html += `<td style="color: var(--muted);">${rowIdx === addends.length - 1 ? "+" : ""}</td>`;
+      for (let i = 0; i < pad; i++) {
+        html += `<td></td>`;
+      }
+      for (let i = 0; i < addend.length; i++) {
+        const letter = addend[i];
+        const colIdx = addend.length - 1 - i;
+        const isAssigned = state.tutor.cumulativeMap[letter] !== undefined;
+        const isTarget = letter === step.target_letter;
+        const isCol = step.column_index === colIdx;
+
+        let classes = "tutor-cell-letter";
+        if (isAssigned) classes += " assigned";
+        if (isTarget) classes += " active-target";
+        if (isCol) classes += " highlight-col";
+
+        const displayVal = isAssigned ? `${letter}<sub>${state.tutor.cumulativeMap[letter]}</sub>` : letter;
+        html += `<td><span class="${classes}">${displayVal}</span></td>`;
+      }
+      html += `</tr>`;
+    });
+
+    // Divider
+    html += `<tr class="tutor-sum-divider"><td colspan="${width + 1}"></td></tr>`;
+
+    // Result row
+    const resPad = width - result.length;
+    html += `<tr><td></td>`;
+    for (let i = 0; i < resPad; i++) {
+      html += `<td></td>`;
+    }
+    for (let i = 0; i < result.length; i++) {
+      const letter = result[i];
+      const colIdx = result.length - 1 - i;
+      const isAssigned = state.tutor.cumulativeMap[letter] !== undefined;
+      const isTarget = letter === step.target_letter;
+      const isCol = step.column_index === colIdx;
+
+      let classes = "tutor-cell-letter";
+      if (isAssigned) classes += " assigned";
+      if (isTarget) classes += " active-target";
+      if (isCol) classes += " highlight-col";
+
+      const displayVal = isAssigned ? `${letter}<sub>${state.tutor.cumulativeMap[letter]}</sub>` : letter;
+      html += `<td><span class="${classes}">${displayVal}</span></td>`;
+    }
+    html += `</tr></table>`;
+
+    container.innerHTML = html;
+
+    const activeColPill = document.getElementById("tutor-active-col-pill");
+    if (activeColPill) {
+      activeColPill.textContent = step.column_name || "Live Columns";
+    }
+  }
+
+  function renderTutorDigitsBank() {
+    const bank = document.getElementById("tutor-digits-bank");
+    if (!bank) return;
+
+    bank.innerHTML = "";
+    const assignedMap = state.tutor.cumulativeMap || {};
+    const digitToLetter = {};
+    for (const [ltr, dig] of Object.entries(assignedMap)) {
+      digitToLetter[dig] = ltr;
+    }
+
+    for (let d = 0; d <= 9; d++) {
+      const chip = document.createElement("div");
+      const isUsed = digitToLetter[d] !== undefined;
+      chip.className = `digit-chip ${isUsed ? "used" : ""}`;
+      chip.innerHTML = `
+        <span>${d}</span>
+        ${isUsed ? `<span class="bound-letter">${digitToLetter[d]}</span>` : ""}
+      `;
+      bank.appendChild(chip);
+    }
+  }
+
+  async function handleTutorChoice(digit, clickedBtn) {
+    if (state.tutor.stepAnswered) return;
+
+    state.tutor.attemptsCount++;
+    const step = state.tutor.session.steps[state.tutor.stepIndex];
+
+    try {
+      const resJson = await bridge.evaluateTutorAnswer(state.tutor.equation, state.tutor.stepIndex, digit);
+      const res = JSON.parse(resJson);
+
+      const feedbackBanner = document.getElementById("tutor-feedback");
+      const feedbackIcon = document.getElementById("tutor-feedback-icon");
+      const feedbackTitle = document.getElementById("tutor-feedback-title");
+      const feedbackBody = document.getElementById("tutor-feedback-body");
+      const nextBtn = document.getElementById("btn-tutor-next");
+
+      if (res.is_correct) {
+        state.tutor.correctCount++;
+        state.tutor.stepAnswered = true;
+        state.tutor.score += 25;
+
+        clickedBtn.classList.add("correct");
+
+        // Disable other choices
+        document.querySelectorAll(".tutor-choice-btn").forEach(btn => {
+          if (btn !== clickedBtn) btn.disabled = true;
+        });
+
+        // Update cumulative map
+        state.tutor.cumulativeMap[step.target_letter] = step.target_digit;
+
+        if (feedbackBanner) {
+          feedbackBanner.className = "tutor-feedback-banner feedback-success";
+          feedbackBanner.style.display = "flex";
+          if (feedbackIcon) feedbackIcon.textContent = "✓";
+          if (feedbackTitle) feedbackTitle.textContent = "Brilliant Deduction!";
+          if (feedbackBody) feedbackBody.textContent = res.explanation;
+        }
+
+        if (nextBtn) nextBtn.disabled = false;
+
+        renderTutorBoard(step);
+        renderTutorDigitsBank();
+        updateTutorChips();
+        showToast(`Correct: ${step.target_letter} = ${step.target_digit}`, "success");
+      } else {
+        clickedBtn.classList.add("incorrect");
+        state.tutor.score = Math.max(0, state.tutor.score - 10);
+
+        if (feedbackBanner) {
+          feedbackBanner.className = "tutor-feedback-banner feedback-error";
+          feedbackBanner.style.display = "flex";
+          if (feedbackIcon) feedbackIcon.textContent = "✕";
+          if (feedbackTitle) feedbackTitle.textContent = "Constraint Contradiction";
+          if (feedbackBody) feedbackBody.textContent = res.explanation;
+        }
+
+        updateTutorChips();
+        showToast("Incorrect deduction. Read feedback and try again.", "error");
+      }
+    } catch (err) {
+      console.error("Error evaluating tutor step:", err);
+      showToast("Evaluation failed", "error");
+    }
+  }
+
+  function revealTutorHint() {
+    const session = state.tutor.session;
+    if (!session || state.tutor.stepIndex >= session.total_steps) return;
+
+    const step = session.steps[state.tutor.stepIndex];
+    state.tutor.hintsUsed++;
+    state.tutor.score = Math.max(0, state.tutor.score - 5);
+    updateTutorChips();
+
+    const hintBox = document.getElementById("tutor-hint-box");
+    const hintText = document.getElementById("tutor-hint-text");
+    if (hintBox && hintText) {
+      hintText.textContent = step.hint_text;
+      hintBox.style.display = "flex";
+    }
+
+    showToast("Hint revealed (-5 pts)", "info");
+  }
+
+  function nextTutorStep() {
+    state.tutor.stepIndex++;
+    state.tutor.stepAnswered = false;
+    renderTutorCurrentStep();
+  }
+
+  function renderTutorCompletion() {
+    const progressFill = document.getElementById("tutor-progress-fill");
+    if (progressFill) progressFill.style.width = "100%";
+
+    const stagePill = document.getElementById("tutor-stage-pill");
+    if (stagePill) stagePill.textContent = "Completed 100%";
+
+    const promptText = document.getElementById("tutor-prompt-text");
+    if (promptText) promptText.textContent = "You have proven every single letter assignment using formal constraint propagation.";
+
+    const choicesGrid = document.getElementById("tutor-choices-grid");
+    if (choicesGrid) choicesGrid.innerHTML = "";
+
+    const feedbackBanner = document.getElementById("tutor-feedback");
+    if (feedbackBanner) feedbackBanner.style.display = "none";
+
+    const hintBox = document.getElementById("tutor-hint-box");
+    if (hintBox) hintBox.style.display = "none";
+
+    const dialogueActions = document.querySelector(".tutor-dialogue-actions");
+    if (dialogueActions) dialogueActions.style.display = "none";
+
+    const completionPanel = document.getElementById("tutor-completion-panel");
+    if (completionPanel) {
+      completionPanel.style.display = "block";
+      const metricsContainer = document.getElementById("tutor-completion-metrics");
+      if (metricsContainer) {
+        const acc = state.tutor.attemptsCount > 0
+          ? Math.round((state.tutor.correctCount / state.tutor.attemptsCount) * 100)
+          : 100;
+        metricsContainer.innerHTML = `
+          <div class="metric-pill">Final Score: <strong>${state.tutor.score}</strong></div>
+          <div class="metric-pill">Deduction Accuracy: <strong>${acc}%</strong></div>
+          <div class="metric-pill">Hints Used: <strong>${state.tutor.hintsUsed}</strong></div>
+        `;
+      }
+    }
+
+    try {
+      bridge.recordAttempt(
+        state.tutor.equation,
+        true,
+        "Tutorial",
+        "tutor",
+        "Completed guided deduction tutorial with full proofs.",
+        0
+      );
+    } catch (e) {
+      console.warn("Failed recording tutor completion:", e);
+    }
+
+    showToast("🎉 Cryptarithm Mastered! All letters proven.", "success");
   }
 
   // ---------------------------------------------------------
@@ -1180,6 +1634,45 @@
     const btnRunBenchmark = document.getElementById("btn-run-benchmark");
     if (btnRunBenchmark) btnRunBenchmark.addEventListener("click", runBenchmark);
 
+    // Tutor Events
+    const presetSelect = document.getElementById("tutor-preset-select");
+    if (presetSelect) {
+      presetSelect.addEventListener("change", () => {
+        initTutorSession(presetSelect.value, true);
+      });
+    }
+
+    const btnTutorRestart = document.getElementById("btn-tutor-restart");
+    if (btnTutorRestart) {
+      btnTutorRestart.addEventListener("click", () => {
+        initTutorSession(state.tutor.equation, true);
+      });
+    }
+
+    const btnTutorHint = document.getElementById("btn-tutor-hint");
+    if (btnTutorHint) {
+      btnTutorHint.addEventListener("click", revealTutorHint);
+    }
+
+    const btnTutorNext = document.getElementById("btn-tutor-next");
+    if (btnTutorNext) {
+      btnTutorNext.addEventListener("click", nextTutorStep);
+    }
+
+    const btnTutorAgain = document.getElementById("btn-tutor-again");
+    if (btnTutorAgain) {
+      btnTutorAgain.addEventListener("click", () => {
+        initTutorSession(state.tutor.equation, true);
+      });
+    }
+
+    const btnTutorToChallenge = document.getElementById("btn-tutor-to-challenge");
+    if (btnTutorToChallenge) {
+      btnTutorToChallenge.addEventListener("click", () => {
+        switchTab("challenge");
+      });
+    }
+
     // Dashboard Events
     const btnClearHistory = document.getElementById("btn-clear-history");
     if (btnClearHistory) btnClearHistory.addEventListener("click", clearAllHistory);
@@ -1195,23 +1688,38 @@
       });
     });
 
-    // Keyboard Navigation for Replay Player
+    // Keyboard Navigation for Replay Player and Tutor
     document.addEventListener("keydown", (e) => {
       const tag = document.activeElement ? document.activeElement.tagName : "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
-      if (state.currentTab !== "studio") return;
-
-      if (e.code === "Space") {
-        e.preventDefault();
-        if (state.replay.isPlaying) pauseReplay();
-        else playReplay();
-      } else if (e.code === "ArrowRight") {
-        e.preventDefault();
-        stepReplay(1);
-      } else if (e.code === "ArrowLeft") {
-        e.preventDefault();
-        stepReplay(-1);
+      if (state.currentTab === "studio") {
+        if (e.code === "Space") {
+          e.preventDefault();
+          if (state.replay.isPlaying) pauseReplay();
+          else playReplay();
+        } else if (e.code === "ArrowRight") {
+          e.preventDefault();
+          stepReplay(1);
+        } else if (e.code === "ArrowLeft") {
+          e.preventDefault();
+          stepReplay(-1);
+        }
+      } else if (state.currentTab === "tutor") {
+        if (["1", "2", "3", "4"].includes(e.key)) {
+          const idx = parseInt(e.key, 10) - 1;
+          const choiceBtns = document.querySelectorAll(".tutor-choice-btn");
+          if (choiceBtns[idx] && !choiceBtns[idx].disabled) {
+            e.preventDefault();
+            choiceBtns[idx].click();
+          }
+        } else if (e.code === "Enter" || e.code === "Space") {
+          const nextBtn = document.getElementById("btn-tutor-next");
+          if (nextBtn && !nextBtn.disabled) {
+            e.preventDefault();
+            nextBtn.click();
+          }
+        }
       }
     });
 
